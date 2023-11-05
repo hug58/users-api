@@ -9,12 +9,9 @@ import (
 func main() {
 	e := echo.New()
 
-	group := e.Group("/api")
-
+	group := e.Group("/api/v1")
 	handlers.Register(group)
 
-	// Iniciar el servidor
 	e.Start(":8080")
-
 	data.DbInstance.Close()
 }

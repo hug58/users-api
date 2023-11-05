@@ -2,7 +2,6 @@ package user
 
 import (
 	"errors"
-	"regexp"
 	"strings"
 	"time"
 
@@ -10,22 +9,22 @@ import (
 )
 
 type User struct {
-	ID           uint      `json:"id,omitempty"`
-	Name         string    `json:"name,omitempty"`
-	Address      string    `json:"addres,omitempty"`
-	Phone        string    `json:"phone,omitempty"`
-	Email        string    `json:"email,omitempty"`
-	Password     string    `json:"password,omitempty"`
-	PasswordHash string    `json:"-"`
-	CreatedAt    time.Time `json:"created_at,omitempty"`
-	UpdatedAt    time.Time `json:"updated_at,omitempty"`
+	ID            uint      `json:"id,omitempty"`
+	Name          string    `json:"name,omitempty"`
+	Address       string    `json:"addres,omitempty"`
+	Phone         string    `json:"phone,omitempty"`
+	Email         string    `json:"email,omitempty"`
+	SessionActive bool      `json:"session_active"`
+	Password      string    `json:"password,omitempty"`
+	PasswordHash  string    `json:"-"`
+	CreatedAt     time.Time `json:"created_at,omitempty"`
+	UpdatedAt     time.Time `json:"updated_at,omitempty"`
 }
 
 func (u *User) HashPassword() error {
 	// Check if the password meets the requirements
-	if !validatePassword(u.Password) {
-		missingRequirements := getMissingRequirements(u.Password)
-		errorMessage := "The password does not meet the minimum requirements. The following requirements are missing: " + strings.Join(missingRequirements, ", ")
+	if req := getMissingRequirements(u.Password); len(req) > 0 {
+		errorMessage := "The password does not meet the minimum requirements. The following requirements are missing: " + strings.Join(req, ", ")
 		return errors.New(errorMessage)
 	}
 
@@ -50,14 +49,6 @@ func (u *User) PasswordMatch(password string) (bool, error) {
 	return true, nil
 }
 
-func validatePassword(password string) bool {
-	// Regular expression to validate the password
-	regex := regexp.MustCompile(`[A-Z]|\d|[@#$%^&+=!]`)
-
-	// Check if the password matches the regular expression
-	return regex.MatchString(password)
-}
-
 func getMissingRequirements(password string) []string {
 	missingRequirements := []string{}
 
@@ -70,6 +61,5 @@ func getMissingRequirements(password string) []string {
 	if !strings.ContainsAny(password, "ABCDEFGHIJKLMNOPQRSTUVWXYZ") {
 		missingRequirements = append(missingRequirements, "at least one uppercase letter")
 	}
-
 	return missingRequirements
 }

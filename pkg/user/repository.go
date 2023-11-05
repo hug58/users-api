@@ -12,4 +12,5 @@ type Repository interface {
 	Update(ctx context.Context, id uint, user User) (*User, error)
 	Delete(ctx context.Context, id uint) error
 	Login(ctx context.Context, login *User) (*User, error)
+	ChangePassword(ctx context.Context, id uint, password string) (string, error)
 }

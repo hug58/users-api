@@ -21,7 +21,7 @@ func (ur *UserRepository) GetAll(ctx context.Context) ([]pkgUser.User, error) {
 		users []pkgUser.User
 	)
 
-	query := `SELECT id, name, addres, email, phone, created_at, updated_at FROM users;`
+	query := `SELECT id, name, addres, email, phone,session_active, created_at, updated_at FROM users;`
 	rows, err := ur.Data.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
@@ -32,7 +32,7 @@ func (ur *UserRepository) GetAll(ctx context.Context) ([]pkgUser.User, error) {
 	for rows.Next() {
 		var user pkgUser.User
 		rows.Scan(&user.ID, &user.Name, &user.Address,
-			&user.Email, &user.Phone, &user.CreatedAt, &user.UpdatedAt)
+			&user.Email, &user.Phone, &user.SessionActive, &user.CreatedAt, &user.UpdatedAt)
 		users = append(users, user)
 	}
 
@@ -42,11 +42,11 @@ func (ur *UserRepository) GetAll(ctx context.Context) ([]pkgUser.User, error) {
 func (ur *UserRepository) GetOne(ctx context.Context, id uint) (pkgUser.User, error) {
 	var (
 		user  pkgUser.User
-		query = `SELECT id, name, addres, email, phone,created_at, updated_at FROM users WHERE id = $1;`
+		query = `SELECT id, name, addres, email, phone, session_active, created_at, updated_at FROM users WHERE id = $1;`
 	)
 
 	row := ur.Data.QueryRowContext(ctx, query, id)
-	if err := row.Scan(&user.ID, &user.Name, &user.Address, &user.Email, user.Phone,
+	if err := row.Scan(&user.ID, &user.Name, &user.Address, &user.Email, &user.Phone, &user.SessionActive,
 		&user.CreatedAt, &user.UpdatedAt); err != nil {
 		return pkgUser.User{}, err
 	}
@@ -87,7 +87,7 @@ func (ur *UserRepository) Create(ctx context.Context, user *pkgUser.User) error 
 
 func (ur *UserRepository) Update(ctx context.Context, id uint, user pkgUser.User) (*pkgUser.User, error) {
 	var (
-		query = `UPDATE users SET name=$1, addres=$2, email=$3, password=$4, phone=$5, updated_at=$6 WHERE id=$7;`
+		query = `UPDATE users SET name=$1, addres=$2, email=$3, phone=$4, updated_at=$5 WHERE id=$6;`
 	)
 
 	if err := user.HashPassword(); err != nil {
@@ -100,7 +100,7 @@ func (ur *UserRepository) Update(ctx context.Context, id uint, user pkgUser.User
 	}
 
 	defer stmt.Close()
-	if _, err := stmt.ExecContext(ctx, user.Name, user.Address, user.Email, user.PasswordHash, user.Phone, time.Now(), id); err != nil {
+	if _, err := stmt.ExecContext(ctx, user.Name, user.Address, user.Email, user.Phone, time.Now(), id); err != nil {
 		return nil, err
 	}
 
@@ -148,4 +148,30 @@ func (ur *UserRepository) Login(ctx context.Context, login *pkgUser.User) (*pkgU
 	}
 
 	return &user, nil
+}
+
+func (ur *UserRepository) ChangePassword(ctx context.Context, id uint, password string) (string, error) {
+	var (
+		query = `UPDATE users SET password=$1, updated_at=$2 WHERE id=$3;`
+		user  = pkgUser.User{
+			Password: password,
+		}
+	)
+
+	if err := user.HashPassword(); err != nil {
+		return "", err
+	}
+
+	stmt, err := ur.Data.PrepareContext(ctx, query)
+	if err != nil {
+		return "", err
+	}
+
+	defer stmt.Close()
+	if _, err := stmt.ExecContext(ctx, user.PasswordHash, time.Now(), id); err != nil {
+		return "", err
+	}
+
+	return "Changed password Succesfully", nil
+
 }

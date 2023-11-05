@@ -4,14 +4,17 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 
+	pkgToken "github.com/hug58/users-api/pkg/token"
 	pkgUser "github.com/hug58/users-api/pkg/user"
 	"github.com/hug58/users-api/pkg/utils"
 	"github.com/labstack/echo/v4"
 )
 
 type UserRouter struct {
-	Repository pkgUser.Repository
+	Repository      pkgUser.Repository
+	RepositoryToken pkgToken.Repository
 }
 
 func (ur *UserRouter) getUsers(c echo.Context) error {
@@ -26,6 +29,31 @@ func (ur *UserRouter) getUsers(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusAccepted, users)
+}
+
+func (ur *UserRouter) getUserByID(c echo.Context) error {
+	idStr := c.Param("id")
+
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, utils.Message{
+			Msg:    "InvalidID",
+			Error:  err.Error(),
+			Status: http.StatusBadRequest,
+		})
+
+	}
+
+	user, err := ur.Repository.GetOne(c.Request().Context(), uint(id))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, utils.Message{
+			Msg:    "Failed Get User",
+			Error:  err.Error(),
+			Status: http.StatusFound,
+		})
+	}
+
+	return c.JSON(http.StatusAccepted, user)
 }
 
 func (ur *UserRouter) CreateUser(c echo.Context) error {
@@ -84,5 +112,58 @@ func (ur *UserRouter) Login(c echo.Context) error {
 	login = utils.Login{User: user}
 	login.GenerarToken()
 
+	if err := ur.RepositoryToken.Create(c.Request().Context(), user.ID, login.AccessToken); err != nil {
+		return c.JSON(http.StatusConflict, utils.Message{Msg: "Error save token", Status: http.StatusConflict, Error: err.Error()})
+	}
+
 	return c.JSON(http.StatusCreated, login)
+}
+
+func (ur *UserRouter) UpdateUser(c echo.Context) error {
+	var user *pkgUser.User
+
+	idStr := c.Param("id")
+
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, utils.Message{
+			Msg:    "InvalidID",
+			Error:  err.Error(),
+			Status: http.StatusBadRequest,
+		})
+
+	}
+
+	if err := json.NewDecoder(c.Request().Body).Decode(&user); err != nil {
+		log.Println(err)
+		return c.JSON(http.StatusBadRequest, utils.Message{
+			Msg:    "BadRequest",
+			Status: http.StatusBadRequest,
+		})
+	}
+
+	defer c.Request().Body.Close()
+
+	if _, err := ur.Repository.Update(c.Request().Context(), uint(id), *user); err != nil {
+		log.Println(err)
+		return c.JSON(http.StatusNotFound, utils.Message{
+			Msg:    "Error create user",
+			Status: http.StatusNotFound,
+			Error:  err.Error(),
+		})
+	}
+
+	if _, err := ur.Repository.ChangePassword(c.Request().Context(), uint(id), user.Password); err != nil {
+		log.Println(err)
+		return c.JSON(http.StatusNotFound, utils.Message{
+			Msg:    "Error create user",
+			Status: http.StatusNotFound,
+			Error:  err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusCreated, utils.Message{
+		Msg:    "User Updated succesfully",
+		Status: http.StatusCreated,
+	})
 }

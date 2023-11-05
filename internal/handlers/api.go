@@ -11,21 +11,20 @@ import (
 )
 
 func Register(e *echo.Group) {
-
 	ur := UserRouter{
-		Repository: &repos.UserRepository{Data: data.DbInstance},
+		Repository:      &repos.UserRepository{Data: data.DbInstance},
+		RepositoryToken: &repos.TokenRepository{Data: data.DbInstance},
 	}
-
 	group := e.Group("/users")
-	groupToken := e.Group(("/token"))
-
-	group.Use(echojwt.WithConfig(echojwt.Config{
+	middleware := echojwt.WithConfig(echojwt.Config{
 		SigningKey: []byte(os.Getenv("SECRET")),
-	}))
+	})
 
-	group.Add("GET", "/", ur.getUsers)
+	group.Add("GET", "/:id", ur.getUserByID, middleware)
+	group.Add("PUT", "/:id", ur.UpdateUser, middleware)
 
-	groupToken.Add("POST", "/user/", ur.CreateUser)
-	groupToken.Add("POST", "/", ur.Login)
+	group.Add("GET", "", ur.getUsers)
+	group.Add("POST", "", ur.CreateUser)
+	group.Add("POST", "/login", ur.Login)
 
 }

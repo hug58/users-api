@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 
 	_ "github.com/lib/pq"
@@ -29,18 +31,30 @@ func getConnection() (*sql.DB, error) {
 	return sql.Open("postgres", pgConnString)
 }
 
-func makeMigration(db *sql.DB) error {
-	b, err := ioutil.ReadFile("./internal/data/models/user.sql")
-	if err != nil {
+func makeMigrations(db *sql.DB, dir string) error {
+	if err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if !info.IsDir() && filepath.Ext(path) == ".sql" {
+			sqlFile, err := ioutil.ReadFile(path)
+			if err != nil {
+				return err
+			}
+
+			_, err = db.Exec(string(sqlFile))
+			if err != nil && !strings.Contains(err.Error(), "already exists") {
+				return err
+			}
+		}
+
+		return nil
+	}); err != nil {
 		return err
 	}
 
-	rows, err := db.Query(string(b))
-	if err != nil {
-		return err
-	}
-
-	return rows.Close()
+	return nil
 }
 
 func init() {
@@ -58,7 +72,7 @@ func init() {
 
 			DbInstance = db
 
-			if err := makeMigration(DbInstance); err != nil {
+			if err := makeMigrations(DbInstance, "./internal/data/models"); err != nil {
 				log.Panic("Error creating database: ", err)
 				return
 			}
