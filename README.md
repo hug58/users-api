@@ -45,6 +45,20 @@ source .env
 go run main.go
 ```
 
+## Ejecutar cronjob
+
+en el ejecutable sh add_cronjob.sh esta configurado para ejecutar cada minuto un cronjob que elimine los tokens antiguos y cambie el status del usuario a false
+
+```sh
+
+#cambiar en el archivo de configuración
+#-d <nombre_de_base_de_datos>
+#-U <nombre_de_usuario>
+
+echo "* * * * * psql -c 'SELECT delete_expired_tokens();' -d postgres -U postgres" | crontab -
+
+
+```
 
 Una vez que el servidor esté en funcionamiento, puedes acceder a la API REST a través de http://localhost:8080. A continuación, se muestran algunos ejemplos de rutas disponibles:
 
