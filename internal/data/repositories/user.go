@@ -73,11 +73,14 @@ func (ur *UserRepository) Create(ctx context.Context, user *pkgUser.User) error 
 		if ok {
 			if pgErr.Code == "23505" && strings.Contains(pgErr.Message, "users_email_key") {
 				return fmt.Errorf("email exists")
-			} else if pgErr.Code == "23505" && strings.Contains(pgErr.Message, "users_username_key") {
-				return fmt.Errorf("username exists")
 			} else if pgErr.Code == "23505" && strings.Contains(pgErr.Message, "users_phone_key") {
 				return fmt.Errorf("phone exists")
 			}
+
+			if pgErr.Code == "23514" && strings.Contains(pgErr.Message, "users_phone_check") {
+				return fmt.Errorf("phone format not supported, please add a phone number as: code + number, example: +58123456999 ")
+			}
+
 		}
 		return err
 	}
@@ -104,6 +107,7 @@ func (ur *UserRepository) Update(ctx context.Context, id uint, user pkgUser.User
 		return nil, err
 	}
 
+	user.Password = ""
 	return &user, nil
 }
 

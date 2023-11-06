@@ -22,6 +22,7 @@ func Register(e *echo.Group) {
 
 	group.Add("GET", "/:id", ur.getUserByID, middleware)
 	group.Add("PUT", "/:id", ur.UpdateUser, middleware)
+	group.Add("DELETE", "/:id", ur.DeleteUser, middleware)
 
 	group.Add("GET", "", ur.getUsers)
 	group.Add("POST", "", ur.CreateUser)

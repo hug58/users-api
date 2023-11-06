@@ -28,7 +28,7 @@ func (ur *UserRouter) getUsers(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusAccepted, users)
+	return c.JSON(http.StatusOK, users)
 }
 
 func (ur *UserRouter) getUserByID(c echo.Context) error {
@@ -53,7 +53,7 @@ func (ur *UserRouter) getUserByID(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusAccepted, user)
+	return c.JSON(http.StatusOK, user)
 }
 
 func (ur *UserRouter) CreateUser(c echo.Context) error {
@@ -78,10 +78,7 @@ func (ur *UserRouter) CreateUser(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusCreated, utils.Message{
-		Msg:    "User Created succesfully",
-		Status: http.StatusCreated,
-	})
+	return c.JSON(http.StatusOK, user)
 }
 
 func (ur *UserRouter) Login(c echo.Context) error {
@@ -116,7 +113,7 @@ func (ur *UserRouter) Login(c echo.Context) error {
 		return c.JSON(http.StatusConflict, utils.Message{Msg: "Error save token", Status: http.StatusConflict, Error: err.Error()})
 	}
 
-	return c.JSON(http.StatusCreated, login)
+	return c.JSON(http.StatusOK, login)
 }
 
 func (ur *UserRouter) UpdateUser(c echo.Context) error {
@@ -162,8 +159,44 @@ func (ur *UserRouter) UpdateUser(c echo.Context) error {
 		})
 	}
 
+	user.Password = ""
+	return c.JSON(http.StatusOK, user)
+}
+
+func (ur *UserRouter) DeleteUser(c echo.Context) error {
+
+	idStr := c.Param("id")
+
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, utils.Message{
+			Msg:    "InvalidID",
+			Error:  err.Error(),
+			Status: http.StatusBadRequest,
+		})
+
+	}
+
+	if err := ur.RepositoryToken.DeleteByUserId(c.Request().Context(), uint(id)); err != nil {
+		log.Println(err)
+		return c.JSON(http.StatusNotFound, utils.Message{
+			Msg:    "Error delete token",
+			Status: http.StatusNotFound,
+			Error:  err.Error(),
+		})
+	}
+
+	if err := ur.Repository.Delete(c.Request().Context(), uint(id)); err != nil {
+		log.Println(err)
+		return c.JSON(http.StatusNotFound, utils.Message{
+			Msg:    "Error delete user",
+			Status: http.StatusNotFound,
+			Error:  err.Error(),
+		})
+	}
+
 	return c.JSON(http.StatusCreated, utils.Message{
-		Msg:    "User Updated succesfully",
+		Msg:    "User Deleted succesfully",
 		Status: http.StatusCreated,
 	})
 }
