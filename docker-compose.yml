@@ -1,0 +1,42 @@
+
+
+services:
+  backend:
+    build: .
+    command: /users-api
+    environment:
+      - PGHOST=db_postgres
+      - PGDATABASE=postgres
+      - PGPORT=5432
+      - PGUSER=postgres
+      - PGPASSWORD=postgres
+      - SECRET=SUPERSECRET!
+      - TOKEN_EXPIRATION_MINUTES=5m
+    networks:
+      - postgres_network
+
+    ports:
+      - "5505:8080"
+
+    depends_on:
+      - db_postgres
+
+
+  db_postgres:
+    image: postgres:17.0
+    environment:
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: postgres
+        POSTGRES_DB: postgres
+    ports:
+        - "5432:5432"
+    volumes:
+        - postgres_data:/var/lib/postgresql/data
+    networks:
+      - postgres_network
+
+volumes:
+  postgres_data:
+
+networks:
+  postgres_network:

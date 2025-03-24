@@ -18,6 +18,7 @@ type UserRouter struct {
 }
 
 func (ur *UserRouter) getUsers(c echo.Context) error {
+	println("GET users")
 
 	users, err := ur.Repository.GetAll(c.Request().Context())
 	if err != nil {
@@ -58,6 +59,8 @@ func (ur *UserRouter) getUserByID(c echo.Context) error {
 
 func (ur *UserRouter) CreateUser(c echo.Context) error {
 	var user *pkgUser.User
+
+	println("POST users")
 
 	if err := json.NewDecoder(c.Request().Body).Decode(&user); err != nil {
 		log.Println(err)
