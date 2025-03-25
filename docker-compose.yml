@@ -15,8 +15,12 @@ services:
     networks:
       - postgres_network
 
+
+    # deploy:
+    #   replicas: 3
+
     ports:
-      - "5505:8080"
+      - "9000:8080"
 
     depends_on:
       - db_postgres
