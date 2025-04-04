@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: users-api-go
-        image: hug58/users-api-go:v1.0.12
+        image: hug58/users-api-go:v1.0.13
         command: ["/users-api"]
         ports:
         - containerPort: 8080
