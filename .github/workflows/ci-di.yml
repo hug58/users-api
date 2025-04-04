@@ -19,7 +19,7 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/mi-app:${{ github.sha }} ./app
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/mi-app:${{ github.sha }} .
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/mi-app:${{ github.sha }}
 
   update-k8s-and-argocd:
