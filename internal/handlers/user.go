@@ -1,20 +1,25 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	pkgToken "github.com/hug58/users-api/pkg/token"
 	pkgUser "github.com/hug58/users-api/pkg/user"
 	"github.com/hug58/users-api/pkg/utils"
 	"github.com/labstack/echo/v4"
+	"github.com/redis/go-redis/v9"
 )
 
 type UserRouter struct {
 	Repository      pkgUser.Repository
 	RepositoryToken pkgToken.Repository
+	RedisClient     *redis.Client // Inyectar el cliente Redis
 }
 
 func (ur *UserRouter) getUsers(c echo.Context) error {
@@ -90,31 +95,58 @@ func (ur *UserRouter) Login(c echo.Context) error {
 		login utils.Login
 	)
 
+	fmt.Sprintln(ur.RedisClient.Ping(context.TODO()))
+
+	// 2. Decodificar el cuerpo de la petición
 	if err := json.NewDecoder(c.Request().Body).Decode(&user); err != nil {
 		log.Println(err)
+
+		// Log en Redis del fallo
+		ur.RedisClient.LPush(c.Request().Context(), "login_errors", fmt.Sprintf("Failed decode at %v: %v", time.Now(), err))
+
 		return c.JSON(http.StatusBadRequest, utils.Message{
 			Msg:    "BadRequest",
 			Status: http.StatusBadRequest,
 		})
 	}
-
 	defer c.Request().Body.Close()
 
+	// 3. Registrar intento de login en Redis
+
+	// 4. Procesar login
 	user, err := ur.Repository.Login(c.Request().Context(), user)
 	if err != nil {
+		// Log del fallo en Redis
+		ur.RedisClient.LPush(c.Request().Context(), "login_failures", fmt.Sprintf("Failed login for %s at %v: %v", user.Email, time.Now(), err))
+
 		return c.JSON(http.StatusNotFound, utils.Message{
-			Msg:    "Login failed",
+			Msg:    "Login Failed",
 			Status: http.StatusNotFound,
 			Error:  err.Error(),
 		})
 	}
 
+	ur.RedisClient.LPush(c.Request().Context(), "login_attempts", fmt.Sprintf("User %s attempting login at %v", user.Email, time.Now()))
+
 	login = utils.Login{User: user}
 	login.GenerarToken()
 
 	if err := ur.RepositoryToken.Create(c.Request().Context(), user.ID, login.AccessToken); err != nil {
-		return c.JSON(http.StatusConflict, utils.Message{Msg: "Error save token", Status: http.StatusConflict, Error: err.Error()})
+		ur.RedisClient.LPush(c.Request().Context(), "token_errors", fmt.Sprintf("Error saving token for %s at %v: %v", user.Email, time.Now(), err))
+
+		return c.JSON(http.StatusConflict, utils.Message{
+			Msg:    "Error save token",
+			Status: http.StatusConflict,
+			Error:  err.Error(),
+		})
 	}
+
+	// 7. Log exitoso en Redis
+	ur.RedisClient.LPush(c.Request().Context(), "login_success", fmt.Sprintf("User %s logged in at %v", user.Email, time.Now()))
+
+	// 8. Métricas (opcional)
+	ur.RedisClient.Incr(c.Request().Context(), "login_count")
+	ur.RedisClient.HIncrBy(c.Request().Context(), "user_logins", user.Email, 1)
 
 	return c.JSON(http.StatusOK, login)
 }
