@@ -53,4 +53,4 @@ jobs:
         run: |
           curl -X POST \
             -H "Authorization: Bearer ${{ secrets.ARGOCD_TOKEN }}" \
-            "${{ secrets.ARGOCD_SERVER }}/api/v1/applications/mi-app/sync"
+            "${{ secrets.ARGOCD_SERVER }}/api/v1/applications/users-api-go/sync"
