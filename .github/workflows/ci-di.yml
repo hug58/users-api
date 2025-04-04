@@ -4,6 +4,9 @@ on:
   push:
     branches: [ "main" ]
 
+permissions:
+  contents: write  # Permiso esencial para poder hacer push
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -28,6 +31,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN || github.token }}
+          fetch-depth: 0  # Necesario para hacer push
 
       - name: Update Kubernetes manifests with new image
         run: |
@@ -40,7 +46,7 @@ jobs:
           git config --global user.email "actions@github.com"
           git add ./k8s/deployment.yaml
           git commit -m "Update image to ${{ github.run_number }}"
-          git push https://${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
+          git push https://${{ secrets.GH_TOKEN || github.token }}@github.com/${{ github.repository }}.git
 
       - name: Sync ArgoCD
         run: |
