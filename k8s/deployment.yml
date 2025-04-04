@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: backend-app
-        image: hug58/users-api-go:v1
+        image: hug58/users-api-go:latest
         command: ["/users-api"]
         ports:
         - containerPort: 8080
@@ -33,3 +33,10 @@ spec:
           value: SUPERSECRET!
         - name: TOKEN_EXPIRATION_MINUTES
           value: 5m
+
+        - name: REDIS_HOST
+          value: "redis-service.redis-server.svc.cluster.local"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: REDIS_PASSWORD
+          value: "Thomas2025"
