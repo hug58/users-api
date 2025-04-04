@@ -1,8 +1,9 @@
 name: CI/CD Pipeline
 
 on:
-  push:
-    branches: [ "main" ]
+  pull_request:
+    types: [closed]
+    branches: [main]
 
 permissions:
   contents: write  # Permiso esencial para poder hacer push
@@ -38,7 +39,7 @@ jobs:
       - name: Update Kubernetes manifests with new image
         run: |
           # Usando sed para actualizar el deployment.yaml
-          sed -i "s|image:.*|image: ${{ secrets.DOCKERHUB_USERNAME }}/users-api-go:${{ github.run_number }}|" ./k8s/deployment.yaml
+          sed -i "s|image:.*|image: ${{ secrets.DOCKERHUB_USERNAME }}/users-api-go:v1.0.${{ github.run_number }}|" ./k8s/deployment.yaml
 
       - name: Commit and Push Changes
         run: |
