@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: backend-app
-        image: hug58/users-api-go:9
+        image: hug58/users-api-go:10
         command: ["/users-api"]
         ports:
         - containerPort: 8080
