@@ -19,8 +19,8 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/mi-app:${{ github.sha }} .
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/mi-app:${{ github.sha }}
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/users-api-go:v1.0.${{ github.run_number }} .
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/users-api-go:v1.0.${{ github.run_number }}
 
   update-k8s-and-argocd:
     needs: build-and-push
@@ -32,7 +32,7 @@ jobs:
       - name: Update Kubernetes manifests with new image
         run: |
           # Usando sed para actualizar el deployment.yaml
-          sed -i "s|image:.*|image: ${{ secrets.DOCKERHUB_USERNAME }}/mi-app:${{ github.sha }}|" ./k8s/deployment.yaml
+          sed -i "s|image:.*|image: ${{ secrets.DOCKERHUB_USERNAME }}/users-api-go:${{ github.sha }}|" ./k8s/deployment.yaml
 
       - name: Commit and Push Changes
         run: |
