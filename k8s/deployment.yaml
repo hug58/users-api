@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: backend-app
+  name: users-api-go
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: backend-app
+      app: users-api-go
   template:
     metadata:
       labels:
-        app: backend-app
+        app: users-api-go
     spec:
       containers:
-      - name: backend-app
+      - name: users-api-go
         image: hug58/users-api-go:v1.0.12
         command: ["/users-api"]
         ports:
