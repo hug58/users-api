@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: users-api-go
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: users-api-go
@@ -40,3 +40,11 @@ spec:
           value: "6379"
         - name: REDIS_PASSWORD
           value: "Thomas2025"
+
+        resources:
+          limits:
+            memory: 512Mi
+            cpu: '0.1'
+          requests:
+            memory: 256Mi
+            cpu: '0.05'
