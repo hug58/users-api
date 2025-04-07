@@ -73,7 +73,9 @@ func init() {
 			DbInstance = db
 
 			if err := makeMigrations(DbInstance, "./internal/data/models"); err != nil {
-				log.Panic("Error creating database: ", err)
+				// log.Panic("Error creating database: ", err)
+				log.Println("Error creating database. Conextion failed")
+
 				return
 			}
 
