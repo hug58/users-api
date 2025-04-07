@@ -52,5 +52,6 @@ func Register(e *echo.Group) {
 
 	groupLogs := e.Group("/logs")
 	groupLogs.Add("GET", "", logRepo.getLogsAll)
+	groupLogs.Add("GET", "/test", logRepo.sendPing)
 
 }
