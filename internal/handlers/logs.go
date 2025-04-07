@@ -22,7 +22,7 @@ func (ur *LogsRouter) getLogsAll(c echo.Context) error {
 	listKey := c.QueryParam("key")
 	if listKey == "" {
 		return c.JSON(http.StatusBadRequest, map[string]string{
-			"error": "El parámetro 'key' es requerido",
+			"error": "'key' is required in perimeter",
 		})
 	}
 
@@ -38,7 +38,7 @@ func (ur *LogsRouter) getLogsAll(c echo.Context) error {
 			start = val
 		} else {
 			return c.JSON(http.StatusBadRequest, map[string]string{
-				"error": "El parámetro 'start' debe ser un número entero",
+				"error": "The 'start' parameter must be an integer.”",
 			})
 		}
 	}
@@ -48,7 +48,7 @@ func (ur *LogsRouter) getLogsAll(c echo.Context) error {
 			end = val
 		} else {
 			return c.JSON(http.StatusBadRequest, map[string]string{
-				"error": "El parámetro 'end' debe ser un número entero",
+				"error": "The 'end' parameter must be an integer.”",
 			})
 		}
 	}
@@ -56,7 +56,7 @@ func (ur *LogsRouter) getLogsAll(c echo.Context) error {
 	elements, err := ur.RedisClient.LRange(ctx, listKey, int64(start), int64(end)).Result()
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": fmt.Sprintf("Error al obtener logs de Redis: %v", err),
+			"error": fmt.Sprintf("failed in get redis logs: %v", err),
 		})
 	}
 
@@ -66,5 +66,42 @@ func (ur *LogsRouter) getLogsAll(c echo.Context) error {
 		"end":   end,
 		"count": len(elements),
 		"logs":  elements,
+	})
+}
+
+func (ur *LogsRouter) sendPing(c echo.Context) error {
+	ctx := context.Background()
+
+	// Check if Redis client is initialized
+	if ur.RedisClient == nil {
+		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+			"status":  "error",
+			"error":   "Redis client not initialized",
+			"details": "The Redis client was not properly configured",
+		})
+	}
+
+	// Execute Redis PING command
+	pong, err := ur.RedisClient.Ping(ctx).Result()
+	if err != nil {
+		return c.JSON(http.StatusServiceUnavailable, map[string]interface{}{
+			"status":  "error",
+			"error":   "Redis connection failed",
+			"details": err.Error(),
+		})
+	}
+
+	// Successful response
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"status":  "success",
+		"message": "Redis connection active",
+		"response": map[string]string{
+			"command": "PING",
+			"result":  pong,
+		},
+		"metadata": map[string]interface{}{
+			"service":  "users-api",
+			"endpoint": "/ping",
+		},
 	})
 }

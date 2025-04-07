@@ -36,6 +36,7 @@ func Register(e *echo.Group) {
 	ping := ur.RedisClient.Ping(context.TODO())
 	fmt.Println("REDIS RESPONSE PING: ")
 	fmt.Print(ping)
+	fmt.Println(addr)
 
 	group := e.Group("/users")
 	middleware := echojwt.WithConfig(echojwt.Config{
@@ -52,5 +53,6 @@ func Register(e *echo.Group) {
 
 	groupLogs := e.Group("/logs")
 	groupLogs.Add("GET", "", logRepo.getLogsAll)
+	groupLogs.Add("GET", "/test", logRepo.sendPing)
 
 }
