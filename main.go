@@ -9,6 +9,7 @@ import (
 func main() {
 	e := echo.New()
 
+	//its not required.
 	data.GetRedisClient()
 
 	group := e.Group("/api/v1")
