@@ -6,3 +6,5 @@ echo "* * * * * psql -c 'SELECT delete_expired_tokens();' -d postgres -U postgre
 
 # Muestra un mensaje de confirmación
 echo "El cronjob ha sido creado y programado correctamente."
+
+
