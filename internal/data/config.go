@@ -11,11 +11,15 @@ import (
 	"sync"
 
 	_ "github.com/lib/pq"
+	"github.com/redis/go-redis/v9"
 )
 
 var (
 	lock       = &sync.Mutex{}
 	DbInstance *sql.DB
+
+	redisOnce  sync.Once
+	CacheRedis *redis.Client
 )
 
 func getConnection() (*sql.DB, error) {
@@ -57,6 +61,18 @@ func makeMigrations(db *sql.DB, dir string) error {
 	return nil
 }
 
+func GetRedisClient() *redis.Client {
+	redisOnce.Do(func() {
+		addr := fmt.Sprintf("%s:%s", os.Getenv("REDIS_HOST"), os.Getenv("REDIS_PORT"))
+		CacheRedis = redis.NewClient(&redis.Options{
+			Addr:     addr,
+			Password: os.Getenv("REDIS_PASSWORD"),
+			DB:       0,
+		})
+	})
+	return CacheRedis
+}
+
 func init() {
 	if DbInstance == nil {
 		lock.Lock()
@@ -84,4 +100,5 @@ func init() {
 		}
 
 	}
+
 }

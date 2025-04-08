@@ -9,6 +9,8 @@ import (
 func main() {
 	e := echo.New()
 
+	data.GetRedisClient()
+
 	group := e.Group("/api/v1")
 	handlers.Register(group)
 

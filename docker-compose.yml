@@ -1,6 +1,7 @@
 
 
 services:
+
   backend:
     build: .
     command: /users-api
@@ -12,19 +13,20 @@ services:
       - PGPASSWORD=postgres
       - SECRET=SUPERSECRET!
       - TOKEN_EXPIRATION_MINUTES=5m
+      - REDIS_PORT=6379
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=password123 
     networks:
       - postgres_network
-
-
-    # deploy:
-    #   replicas: 3
+      - redis_network
 
     ports:
       - "9000:8080"
-
     depends_on:
-      - db_postgres
-
+      redis:
+        condition: service_healthy
+      db_postgres:
+        condition: service_healthy 
 
   db_postgres:
     image: postgres:17.0
@@ -32,6 +34,10 @@ services:
         POSTGRES_USER: postgres
         POSTGRES_PASSWORD: postgres
         POSTGRES_DB: postgres
+    healthcheck:  # Healthcheck para PostgreSQL
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
     ports:
         - "5432:5432"
     volumes:
@@ -39,8 +45,25 @@ services:
     networks:
       - postgres_network
 
+  redis:
+    image: redis:6.2.5-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    environment:
+      - REDIS_PASSWORD=password123 
+    command: ["redis-server", "--requirepass", password123]  
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "$$REDIS_PASSWORD", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - redis_network
+
 volumes:
   postgres_data:
 
 networks:
   postgres_network:
+  redis_network:
